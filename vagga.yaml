@@ -1,0 +1,45 @@
+containers:
+  golang:
+    setup:
+      - !Ubuntu xenial
+      - !AptTrust keys:
+        - 52B59B1571A79DBC054901C0F6BC817356A3D45E
+      - !UbuntuPPA longsleep/golang-backports
+      - !Install
+        - ca-certificates
+        - git
+        - golang-go
+        - curl
+      - !EnsureDir /go
+    volumes:
+      /go: !Persistent
+        name: "go"
+        init-command: _golang-init
+    environ: &go_config
+      GOPATH: /go
+      PWD: /go/src/project
+      HOME: /
+      PATH: /go/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+      
+commands:
+  _golang-init: !Command
+    description: To build the GoLang environment
+    container: golang
+    run: |
+      echo "Creating $GOPATH/src"
+      mkdir -p $GOPATH/src
+      mkdir -p $GOPATH/bin
+      echo "Linking project folder to $GOPATH/src/project"
+      ln -snf /work $GOPATH/src/project
+      echo "Installing Glide"
+      curl https://glide.sh/get | sh
+
+  glide: !Command
+    description: glide
+    container: golang
+    run: [glide]
+
+  go: !Command
+    description: golang Command
+    container: golang
+    run: [go]
